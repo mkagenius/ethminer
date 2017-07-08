@@ -714,37 +714,48 @@ __device__ __inline__ uint2 ROL24(const uint2 a)
 	return result;
 }
 
-
-
 #if  __CUDA_ARCH__ >= 350
-__inline__ __device__ uint2 ROL2(const uint2 a, const int offset) {
+__inline__ __device__ uint2 ROL2_64(const uint2 a, const int offset) {
 	uint2 result;
-	if (offset >= 32) {
-		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.x) : "r"(a.x), "r"(a.y), "r"(offset));
-		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.y) : "r"(a.y), "r"(a.x), "r"(offset));
-	}
-	else {
-		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.x) : "r"(a.y), "r"(a.x), "r"(offset));
-		asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.y) : "r"(a.x), "r"(a.y), "r"(offset));
-	}
+
+	asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.x) : "r"(a.x), "r"(a.y), "r"(offset));
+	asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.y) : "r"(a.y), "r"(a.x), "r"(offset));
+
+	
 	return result;
 }
 #else
-__inline__ __device__ uint2 ROL2(const uint2 v, const int n)
+__inline__ __device__ uint2 ROL2_64(const uint2 v, const int n)
 {
-		uint2 result;
-		if (n <= 32) 
-		{
-			result.y = ((v.y << (n)) | (v.x >> (32 - n)));
-			result.x = ((v.x << (n)) | (v.y >> (32 - n)));
-		}
-		else 
-		{
-			result.y = ((v.x << (n - 32)) | (v.y >> (64 - n)));
-			result.x = ((v.y << (n - 32)) | (v.x >> (64 - n)));
+	uint2 result;
+	
+	result.y = ((v.x << (n - 32)) | (v.y >> (64 - n)));
+	result.x = ((v.y << (n - 32)) | (v.x >> (64 - n)));
+	
+	return result;
+}
+#endif
 
-		}
-		return result;
+
+
+#if  __CUDA_ARCH__ >= 350
+__inline__ __device__ uint2 ROL2_32(const uint2 a, const int offset) {
+	uint2 result;
+	
+	asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.x) : "r"(a.y), "r"(a.x), "r"(offset));
+	asm("shf.l.wrap.b32 %0, %1, %2, %3;" : "=r"(result.y) : "r"(a.x), "r"(a.y), "r"(offset));
+	
+	return result;
+}
+#else
+__inline__ __device__ uint2 ROL2_32(const uint2 v, const int n)
+{
+	uint2 result;
+
+	result.y = ((v.y << (n)) | (v.x >> (32 - n)));
+	result.x = ((v.x << (n)) | (v.y >> (32 - n)));
+
+	return result;
 }
 #endif
 
